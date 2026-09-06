@@ -1,0 +1,61 @@
+name: CI/CD Query Benchmarker
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+        
+    - name: Install Benchmarking Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r bench/requirements.txt
+        
+    - name: Set up Django Metrics API
+      run: |
+        pip install -r api/requirements.txt || pip install django djangorestframework django-cors-headers
+        cd api
+        python manage.py makemigrations
+        python manage.py migrate
+        python manage.py runserver 8000 &
+        sleep 3  # Wait for Django to start
+        
+    - name: Spin up Target Database (Memory-Constrained)
+      run: |
+        cd infra
+        docker compose up -d
+        
+    - name: Wait for Postgres to be ready
+      run: |
+        echo "Waiting for postgres to accept connections..."
+        until docker exec benchmark_db pg_isready -U benchuser; do
+          sleep 2
+        done
+        echo "Postgres is ready!"
+        
+    - name: Run Data Seeder (Bulk Insert)
+      run: |
+        python bench/seeder.py
+      env:
+        POSTGRES_HOST: localhost
+        
+    - name: Execute Analytical Benchmarks (Spill Detection)
+      run: |
+        python bench/runner.py
+      env:
+        POSTGRES_HOST: localhost
+        METRICS_API_URL: http://localhost:8000/api/results/
