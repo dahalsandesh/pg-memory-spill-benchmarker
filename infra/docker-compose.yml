@@ -15,10 +15,14 @@ services:
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
       - pgdata:/var/lib/postgresql/data
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    
+    mem_limit: 256m
+    cpus: 1.0
     deploy:
       resources:
         limits:
           memory: 256M
+          cpus: '1.0'
 
 volumes:
   pgdata:
