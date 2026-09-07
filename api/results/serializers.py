@@ -5,3 +5,4 @@ class BenchmarkResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = BenchmarkResult
         fields = '__all__'
+        read_only_fields = ['id']

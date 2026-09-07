@@ -5,6 +5,12 @@ class BenchmarkResult(models.Model):
     execution_time_ms = models.FloatField()
     ram_allocated_mb = models.IntegerField()
     spilled_to_disk = models.BooleanField()
+    spill_type = models.CharField(max_length=50, default="none")
+    sort_space_used_kb = models.IntegerField(default=0)
+    hash_batches = models.IntegerField(default=1)
+    temp_read_blocks = models.IntegerField(default=0)
+    temp_written_blocks = models.IntegerField(default=0)
+    work_mem_kb = models.IntegerField(default=2048)
     timestamp = models.DateTimeField()
 
     class Meta:
